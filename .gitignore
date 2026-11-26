@@ -1,0 +1,42 @@
+# Credentials & environment files
+.env
+.env.*
+!.env.example
+**/application-local.properties
+**/application-local.yml
+**/application-dev.properties
+**/application-prod.properties
+**/application-secret.properties
+
+# Maven / Java
+target/
+*.jar
+*.war
+*.ear
+*.class
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# IDEs & OS
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
