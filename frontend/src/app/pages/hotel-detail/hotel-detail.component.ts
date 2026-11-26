@@ -6,6 +6,7 @@ import { AlternativeDateWindow, HotelDetail, QuoteResponse } from '../../models/
 import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { ApiService } from '../../services/api.service';
 import { GuestPreferencesService } from '../../services/guest-preferences.service';
+import { MAX_STAY_NIGHTS, calculateNights, getLocalTodayIso } from '../../utils/date.utils';
 
 @Component({
   selector: 'app-hotel-detail',
@@ -345,7 +346,7 @@ export class HotelDetailComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly guestPrefs = inject(GuestPreferencesService);
 
-  readonly today = new Date().toISOString().split('T')[0];
+  readonly today = getLocalTodayIso();
   readonly hotel = signal<HotelDetail | null>(null);
   readonly quote = signal<QuoteResponse | null>(null);
   readonly alternatives = signal<AlternativeDateWindow[]>([]);
@@ -390,6 +391,9 @@ export class HotelDetailComponent implements OnInit {
     }
     if (checkOut <= checkIn) {
       return 'Check-out date must be after check-in date.';
+    }
+    if (calculateNights(checkIn, checkOut) > MAX_STAY_NIGHTS) {
+      return `Stay cannot exceed ${MAX_STAY_NIGHTS} nights.`;
     }
     return null;
   }

@@ -9,7 +9,8 @@ import {
   HotelDetail,
   HotelSummary,
   QuoteRequest,
-  QuoteResponse
+  QuoteResponse,
+  SearchSuggestionsResponse
 } from '../models/booking.models';
 
 @Injectable({ providedIn: 'root' })
@@ -39,6 +40,17 @@ export class ApiService {
   getHotelAlternatives(id: number, checkIn: string, checkOut: string): Observable<AlternativeDateWindow[]> {
     const params = new HttpParams().set('checkIn', checkIn).set('checkOut', checkOut);
     return this.http.get<AlternativeDateWindow[]>(`${this.baseUrl}/hotels/${id}/alternatives`, { params });
+  }
+
+  getSearchSuggestions(location?: string, checkIn?: string, checkOut?: string): Observable<SearchSuggestionsResponse> {
+    let params = new HttpParams();
+    if (location?.trim()) {
+      params = params.set('location', location.trim());
+    }
+    if (checkIn && checkOut) {
+      params = params.set('checkIn', checkIn).set('checkOut', checkOut);
+    }
+    return this.http.get<SearchSuggestionsResponse>(`${this.baseUrl}/hotels/suggestions`, { params });
   }
 
   getQuote(payload: QuoteRequest): Observable<QuoteResponse> {

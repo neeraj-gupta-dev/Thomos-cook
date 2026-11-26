@@ -18,3 +18,4 @@ export class InrCurrencyPipe implements PipeTransform {
     return INR_FORMATTER.format(value);
   }
 }
+

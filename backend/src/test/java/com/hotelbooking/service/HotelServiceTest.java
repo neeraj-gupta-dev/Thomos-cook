@@ -1,6 +1,7 @@
 package com.hotelbooking.service;
 
 import com.hotelbooking.dto.AlternativeDateWindow;
+import com.hotelbooking.dto.SearchSuggestionsResponse;
 import com.hotelbooking.entity.Hotel;
 import com.hotelbooking.repository.HotelRepository;
 import com.hotelbooking.repository.InventoryRepository;
@@ -115,6 +116,34 @@ class HotelServiceTest {
         List<AlternativeDateWindow> alternatives = hotelService.getAlternativeDates(1L, checkIn, checkOut);
 
         assertThat(alternatives).isEmpty();
+    }
+
+    @Test
+    void searchSuggestionsReturnOtherCitiesWhenChosenCityHasNoMatches() {
+        LocalDate checkIn = TODAY.plusDays(4);
+        LocalDate checkOut = TODAY.plusDays(6);
+
+        Hotel mumbaiHotel = Hotel.builder()
+                .id(2L)
+                .name("Mumbai Stay")
+                .location("Mumbai")
+                .description("Sea view")
+                .amenities("Wi-Fi")
+                .pricePerNight(new BigDecimal("5000.00"))
+                .totalRooms(4)
+                .build();
+
+        when(hotelRepository.searchByLocation("Shimla")).thenReturn(List.of());
+        when(hotelRepository.findAll()).thenReturn(List.of(sampleHotel, mumbaiHotel));
+        when(inventoryRepository.findAvailableRoomsPerNight(any(), eq(checkIn), eq(checkOut)))
+                .thenReturn(List.of());
+
+        SearchSuggestionsResponse suggestions = hotelService.getSearchSuggestions("Shimla", checkIn, checkOut);
+
+        assertThat(suggestions.sameCityAlternatives()).isEmpty();
+        assertThat(suggestions.otherCityHotels()).hasSize(2);
+        assertThat(suggestions.otherCityHotels().get(0).location()).isEqualTo("Goa");
+        assertThat(suggestions.otherCityHotels().get(1).location()).isEqualTo("Mumbai");
     }
 
     private InventoryRepository.NightlyAvailability availability(LocalDate date, int availableRooms) {

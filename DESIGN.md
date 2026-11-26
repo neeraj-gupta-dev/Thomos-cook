@@ -14,7 +14,8 @@ The repository is a monorepo with two decoupled applications:
 - **`/frontend`** — Angular 19 standalone SPA:
   - `ApiService` (`HttpClient`) communicating with `environment.apiBaseUrl` (`http://localhost:8080/api`).
   - Functional `httpErrorInterceptor` surfacing backend `ApiError` messages via `ToastService` / `ToastComponent`.
-  - Four standalone routed pages: Home (`/`), Hotel Details (`/hotels/:id`), Booking Confirmation (`/booking/confirmation/:reference`), and Manage Booking (`/manage-booking`).
+  - `GuestPreferencesService` storing guest name, email, and recent booking references in `localStorage` for prefill and a "My bookings on this device" list (no login, passwords, or server-side sessions).
+  - Four standalone routed pages: Home (`/`), Hotel Details (`/hotels/:id`), Booking Confirmation (`/booking/confirmation/:reference`), and Manage Booking (`/manage-booking`), plus a 404 fallback page.
 
 ## 2. Database Design
 
@@ -70,6 +71,7 @@ Managed by Flyway (`V1__init_schema.sql`, `V2__seed_hotels.sql`) on MySQL 8 (`In
 2. Any missing `room_inventory` rows for `[checkIn, checkOut)` are inserted and flushed (`saveAllAndFlush`), and `InventoryRepository.findByHotelAndDateRangeForUpdate` re-queries the full range with `SELECT ... FOR UPDATE` ordered by `stay_date ASC`.
 3. Consistent ascending `stay_date` lock ordering prevents deadlocks between overlapping requests.
 4. `room_inventory` also enforces `UNIQUE(hotel_id, stay_date)` and `CHECK (booked_rooms >= 0)` at the database level as a final safety net.
+5. **Testing note:** The 2-thread concurrency test in `BookingServiceTest` runs against H2 in MySQL mode. Because H2's `SELECT ... FOR UPDATE` locking semantics differ from MySQL 8 InnoDB row/gap locks, real MySQL concurrency behaviour should be verified with Testcontainers.
 
 ## 7. Surprise Feature — Flexible Date Suggestions
 
@@ -77,10 +79,12 @@ When a hotel is sold out for the requested dates, `GET /api/hotels/{id}/alternat
 
 - Fetches per-night availability once for `[max(today, checkIn - 14), checkOut + 14)`.
 - Expands outward by `delta = 1..14` (`checkIn - delta`, then `checkIn + delta`), skipping past check-in dates and any window with a sold-out night.
-- In Angular, sold-out hotel cards and the hotel detail quote panel render these suggestions as clickable chips that update the form dates and re-run the search/quote.
+- When a search on `/` returns zero hotels (e.g., an unlisted city or no matches), `GET /api/hotels/suggestions` returns nearby date alternatives in the chosen city (if hotels exist there) plus available hotels in other cities for the requested dates.
+- In Angular, sold-out hotel cards, zero-result empty states, and the hotel detail quote panel render these suggestions as clickable chips that update the form dates and re-run the search/quote.
 
 ## 8. Limitations and Improvements
 
+- **Lightweight `localStorage` personalisation vs. full authentication:** Full user authentication (JWT/sessions, password resets, account management) was out of scope for this assignment. Instead, `GuestPreferencesService` persists guest name, email, and recent booking references in `localStorage` on the user's device only (with a "Forget my details" button), while all booking reads and cancellations remain gated on the `(reference, guestEmail)` pair on the backend.
 - **Single-room-per-booking assumption:** Currently each booking reserves 1 room; adding a `rooms` / `guests` count would require checking `available >= requestedRooms`.
 - **Hotel-level lock during lazy initialization:** Locking the `Hotel` row in `createBooking` serializes bookings across non-overlapping dates of the same hotel; pre-seeding rolling inventory (e.g., 365 days) or using `INSERT IGNORE` would allow locking only the specific `room_inventory` night rows.
 - **No rate limiting or CAPTCHA:** Public booking/lookup endpoints would benefit from rate limiting in production.

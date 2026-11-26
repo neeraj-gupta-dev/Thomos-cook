@@ -2,9 +2,10 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HotelImageComponent } from '../../components/hotel-image/hotel-image.component';
-import { AlternativeDateWindow, HotelSummary } from '../../models/booking.models';
+import { AlternativeDateWindow, CityDateSuggestion, HotelSummary, SearchSuggestionsResponse } from '../../models/booking.models';
 import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { ApiService } from '../../services/api.service';
+import { MAX_STAY_NIGHTS, calculateNights, getLocalTodayIso } from '../../utils/date.utils';
 
 function dateRangeValidator(today: string): ValidatorFn {
   return (group: AbstractControl): ValidationErrors | null => {
@@ -22,6 +23,9 @@ function dateRangeValidator(today: string): ValidatorFn {
     }
     if (checkOut <= checkIn) {
       return { invalidRange: 'Check-out date must be after check-in date.' };
+    }
+    if (calculateNights(checkIn, checkOut) > MAX_STAY_NIGHTS) {
+      return { maxNights: `Stay cannot exceed ${MAX_STAY_NIGHTS} nights.` };
     }
     return null;
   };
@@ -101,7 +105,33 @@ function dateRangeValidator(today: string): ValidatorFn {
         </div>
       } @else if (hotels().length === 0) {
         <div class="card empty-state">
-          No hotels found. Try another city or clear the filters.
+          <p>No hotels found. Try another city or clear the filters.</p>
+          @if (searchSuggestions(); as sug) {
+            @if (sug.sameCityAlternatives.length > 0) {
+              <div class="alt-section zero-suggestions">
+                <span class="muted">Nearby dates in this city:</span>
+                <div class="alt-chips center-chips">
+                  @for (alt of sug.sameCityAlternatives; track alt.hotelId + '-' + alt.checkIn) {
+                    <button type="button" class="alt-chip" (click)="applyCityDateSuggestion(alt)">
+                      {{ alt.location }}: {{ alt.checkIn }} &rarr; {{ alt.checkOut }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+            @if (sug.otherCityHotels.length > 0) {
+              <div class="alt-section zero-suggestions">
+                <span class="muted">Available in other cities:</span>
+                <div class="alt-chips center-chips">
+                  @for (other of sug.otherCityHotels; track other.id) {
+                    <button type="button" class="alt-chip" (click)="applyCityFilter(other.location)">
+                      {{ other.location }} &mdash; {{ other.name }} ({{ other.pricePerNight | inr }}/night)
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          }
         </div>
       } @else {
         <div class="hotel-grid">
@@ -333,6 +363,15 @@ function dateRangeValidator(today: string): ValidatorFn {
       color: #ffffff;
     }
 
+    .zero-suggestions {
+      margin-top: 16px;
+      align-items: center;
+    }
+
+    .center-chips {
+      justify-content: center;
+    }
+
     .skeleton-card {
       padding: 0;
       overflow: hidden;
@@ -380,9 +419,10 @@ export class HotelListComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
 
-  readonly today = new Date().toISOString().split('T')[0];
+  readonly today = getLocalTodayIso();
   readonly hotels = signal<HotelSummary[]>([]);
   readonly alternativesMap = signal<Record<number, AlternativeDateWindow[]>>({});
+  readonly searchSuggestions = signal<SearchSuggestionsResponse | null>(null);
   readonly loading = signal(false);
 
   readonly searchForm = this.fb.nonNullable.group(
@@ -403,7 +443,7 @@ export class HotelListComponent implements OnInit {
     if (!errors) {
       return null;
     }
-    return errors['incompleteDates'] || errors['pastCheckIn'] || errors['invalidRange'] || null;
+    return errors['incompleteDates'] || errors['pastCheckIn'] || errors['invalidRange'] || errors['maxNights'] || null;
   }
 
   onSearch(): void {
@@ -436,15 +476,34 @@ export class HotelListComponent implements OnInit {
     this.loadHotels();
   }
 
+  applyCityDateSuggestion(alt: CityDateSuggestion): void {
+    this.searchForm.patchValue({
+      location: alt.location,
+      checkIn: alt.checkIn,
+      checkOut: alt.checkOut
+    });
+    this.loadHotels();
+  }
+
+  applyCityFilter(location: string): void {
+    this.searchForm.patchValue({ location });
+    this.loadHotels();
+  }
+
   private loadHotels(): void {
     const { location, checkIn, checkOut } = this.searchForm.getRawValue();
     this.loading.set(true);
     this.alternativesMap.set({});
+    this.searchSuggestions.set(null);
     this.api.searchHotels(location, checkIn || undefined, checkOut || undefined).subscribe({
       next: (data) => {
         this.hotels.set(data);
         this.loading.set(false);
-        if (checkIn && checkOut) {
+        if (data.length === 0) {
+          this.api.getSearchSuggestions(location, checkIn || undefined, checkOut || undefined).subscribe({
+            next: (sug) => this.searchSuggestions.set(sug)
+          });
+        } else if (checkIn && checkOut) {
           for (const hotel of data) {
             if (hotel.availableRooms === 0) {
               this.api.getHotelAlternatives(hotel.id, checkIn, checkOut).subscribe({

@@ -61,3 +61,4 @@ export class HotelImageComponent {
     this.failed.set(true);
   }
 }
+

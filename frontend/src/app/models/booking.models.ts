@@ -29,6 +29,22 @@ export interface AlternativeDateWindow {
   totalPrice: number;
 }
 
+export interface CityDateSuggestion {
+  hotelId: number;
+  hotelName: string;
+  location: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  availableRooms: number;
+  totalPrice: number;
+}
+
+export interface SearchSuggestionsResponse {
+  sameCityAlternatives: CityDateSuggestion[];
+  otherCityHotels: HotelSummary[];
+}
+
 export interface QuoteRequest {
   hotelId: number;
   checkIn: string;

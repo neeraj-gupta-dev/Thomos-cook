@@ -3,6 +3,7 @@ package com.hotelbooking.service;
 import com.hotelbooking.dto.AlternativeDateWindow;
 import com.hotelbooking.dto.HotelDetailResponse;
 import com.hotelbooking.dto.HotelSummaryResponse;
+import com.hotelbooking.dto.SearchSuggestionsResponse;
 import com.hotelbooking.entity.Hotel;
 import com.hotelbooking.exception.BadRequestException;
 import com.hotelbooking.exception.ResourceNotFoundException;
@@ -128,6 +129,53 @@ public class HotelService {
         }
 
         return suggestions;
+    }
+
+    /**
+     * Builds fallback suggestions when a search returns no available hotels in the chosen city:
+     * 1) nearby available date windows in the same city (if dates were provided and hotels exist there),
+     * 2) available hotels in other cities for the requested dates.
+     */
+    @Transactional(readOnly = true)
+    public SearchSuggestionsResponse getSearchSuggestions(String location, LocalDate checkIn, LocalDate checkOut) {
+        Integer nights = validateOptionalDates(checkIn, checkOut);
+        String normalizedLocation = location == null ? "" : location.trim();
+
+        List<SearchSuggestionsResponse.CityDateSuggestion> sameCityAlternatives = new ArrayList<>();
+        if (nights != null && !normalizedLocation.isBlank()) {
+            List<Hotel> cityHotels = hotelRepository.searchByLocation(normalizedLocation);
+            for (Hotel hotel : cityHotels) {
+                if (sameCityAlternatives.size() >= MAX_ALTERNATIVES) {
+                    break;
+                }
+                List<AlternativeDateWindow> alts = getAlternativeDates(hotel.getId(), checkIn, checkOut);
+                for (AlternativeDateWindow alt : alts) {
+                    if (sameCityAlternatives.size() >= MAX_ALTERNATIVES) {
+                        break;
+                    }
+                    sameCityAlternatives.add(new SearchSuggestionsResponse.CityDateSuggestion(
+                            hotel.getId(),
+                            hotel.getName(),
+                            hotel.getLocation(),
+                            alt.checkIn(),
+                            alt.checkOut(),
+                            alt.nights(),
+                            alt.availableRooms(),
+                            alt.totalPrice()
+                    ));
+                }
+            }
+        }
+
+        List<HotelSummaryResponse> otherCityHotels = hotelRepository.findAll().stream()
+                .filter(hotel -> normalizedLocation.isBlank()
+                        || !hotel.getLocation().toLowerCase().contains(normalizedLocation.toLowerCase()))
+                .map(hotel -> toSummary(hotel, checkIn, checkOut, nights))
+                .filter(summary -> summary.availableRooms() == null || summary.availableRooms() > 0)
+                .limit(MAX_ALTERNATIVES)
+                .toList();
+
+        return new SearchSuggestionsResponse(sameCityAlternatives, otherCityHotels);
     }
 
     private void addIfAvailable(

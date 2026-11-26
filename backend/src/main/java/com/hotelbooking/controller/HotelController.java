@@ -3,6 +3,7 @@ package com.hotelbooking.controller;
 import com.hotelbooking.dto.AlternativeDateWindow;
 import com.hotelbooking.dto.HotelDetailResponse;
 import com.hotelbooking.dto.HotelSummaryResponse;
+import com.hotelbooking.dto.SearchSuggestionsResponse;
 import com.hotelbooking.service.HotelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -48,6 +49,15 @@ public class HotelController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut
     ) {
         return ResponseEntity.ok(hotelService.getAlternativeDates(id, checkIn, checkOut));
+    }
+
+    @GetMapping("/suggestions")
+    public ResponseEntity<SearchSuggestionsResponse> getSearchSuggestions(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut
+    ) {
+        return ResponseEntity.ok(hotelService.getSearchSuggestions(location, checkIn, checkOut));
     }
 }
 

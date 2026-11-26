@@ -7,3 +7,4 @@ UPDATE hotels SET image_url = '/assets/hotels/hotel-3.jpg' WHERE id = 3;
 UPDATE hotels SET image_url = '/assets/hotels/hotel-4.jpg' WHERE id = 4;
 UPDATE hotels SET image_url = '/assets/hotels/hotel-5.jpg' WHERE id = 5;
 UPDATE hotels SET image_url = '/assets/hotels/hotel-6.jpg' WHERE id = 6;
+
