@@ -11,6 +11,7 @@ public record BookingResponse(
         Long hotelId,
         String hotelName,
         String hotelLocation,
+        String hotelImageUrl,
         String guestName,
         String guestEmail,
         LocalDate checkIn,

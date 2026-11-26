@@ -79,3 +79,4 @@ npx ng build
 ## AI Assistance Disclosure
 
 Antigravity was used to generate scaffolding and boilerplate across the Spring Boot backend, Flyway migrations, unit tests, and Angular frontend. I reviewed and understand the code, architecture, concurrency controls, and trade-offs documented in [DESIGN.md](./DESIGN.md).
+

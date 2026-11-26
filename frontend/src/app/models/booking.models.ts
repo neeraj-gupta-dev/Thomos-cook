@@ -4,6 +4,7 @@ export interface HotelSummary {
   location: string;
   description: string;
   amenities: string[];
+  imageUrl: string | null;
   pricePerNight: number;
   totalRooms: number;
   availableRooms: number | null;
@@ -60,6 +61,7 @@ export interface BookingResponse {
   hotelId: number;
   hotelName: string;
   hotelLocation: string;
+  hotelImageUrl: string | null;
   guestName: string;
   guestEmail: string;
   checkIn: string;

@@ -264,6 +264,7 @@ public class BookingService {
                 hotel.getId(),
                 hotel.getName(),
                 hotel.getLocation(),
+                hotel.getImageUrl(),
                 booking.getGuestName(),
                 booking.getGuestEmail(),
                 booking.getCheckIn(),

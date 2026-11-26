@@ -43,6 +43,9 @@ public class Hotel {
     @Column(nullable = false, length = 500)
     private String amenities;
 
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
+
     @Column(name = "price_per_night", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerNight;
 

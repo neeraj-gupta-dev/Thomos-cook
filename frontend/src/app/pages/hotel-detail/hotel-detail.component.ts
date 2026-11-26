@@ -2,13 +2,14 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { HotelImageComponent } from '../../components/hotel-image/hotel-image.component';
 import { AlternativeDateWindow, HotelDetail, QuoteResponse } from '../../models/booking.models';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-hotel-detail',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe],
+  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, HotelImageComponent],
   template: `
     <div class="back-link">
       <a routerLink="/">&larr; Back to hotels</a>
@@ -20,6 +21,14 @@ import { ApiService } from '../../services/api.service';
       @if (hotel(); as h) {
         <div class="detail-layout">
           <section class="card hotel-info">
+            <div class="detail-photo">
+              <app-hotel-image
+                [src]="h.imageUrl"
+                [alt]="h.name + ' in ' + h.location"
+                [fallbackLabel]="h.name"
+                aspectRatio="16 / 9"
+              />
+            </div>
             <span class="badge badge-muted">{{ h.location }}</span>
             <h1>{{ h.name }}</h1>
             <p class="price-line">
@@ -193,6 +202,13 @@ import { ApiService } from '../../services/api.service';
     .hotel-info h1 {
       margin: 0.5rem 0 0.4rem;
       font-size: 1.7rem;
+    }
+
+    .detail-photo {
+      margin: -1.25rem -1.25rem 1rem;
+      overflow: hidden;
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
     }
 
     .price-line {

@@ -2,6 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { HotelImageComponent } from '../../components/hotel-image/hotel-image.component';
 import { AlternativeDateWindow, HotelSummary } from '../../models/booking.models';
 import { ApiService } from '../../services/api.service';
 
@@ -29,7 +30,7 @@ function dateRangeValidator(today: string): ValidatorFn {
 @Component({
   selector: 'app-hotel-list',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe],
+  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, HotelImageComponent],
   template: `
     <section class="hero">
       <h1>Find your next stay</h1>
@@ -95,6 +96,12 @@ function dateRangeValidator(today: string): ValidatorFn {
         <div class="hotel-grid">
           @for (hotel of hotels(); track hotel.id) {
             <article class="card hotel-card">
+              <app-hotel-image
+                [src]="hotel.imageUrl"
+                [alt]="hotel.name + ' in ' + hotel.location"
+                [fallbackLabel]="hotel.name"
+              />
+              <div class="hotel-card-body">
               <div class="hotel-card-header">
                 <div>
                   <span class="badge badge-muted">{{ hotel.location }}</span>
@@ -160,6 +167,7 @@ function dateRangeValidator(today: string): ValidatorFn {
                   View &amp; Book
                 </a>
               </div>
+              </div>
             </article>
           }
         </div>
@@ -205,7 +213,16 @@ function dateRangeValidator(today: string): ValidatorFn {
     .hotel-card {
       display: flex;
       flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .hotel-card-body {
+      display: flex;
+      flex-direction: column;
       gap: 0.9rem;
+      padding: 1.25rem;
+      flex: 1;
     }
 
     .hotel-card-header {

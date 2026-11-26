@@ -9,6 +9,7 @@ public record HotelSummaryResponse(
         String location,
         String description,
         List<String> amenities,
+        String imageUrl,
         BigDecimal pricePerNight,
         Integer totalRooms,
         Integer availableRooms,

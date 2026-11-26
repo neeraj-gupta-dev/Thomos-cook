@@ -85,3 +85,4 @@ When a hotel is sold out for the requested dates, `GET /api/hotels/{id}/alternat
 - **Hotel-level lock during lazy initialization:** Locking the `Hotel` row in `createBooking` serializes bookings across non-overlapping dates of the same hotel; pre-seeding rolling inventory (e.g., 365 days) or using `INSERT IGNORE` would allow locking only the specific `room_inventory` night rows.
 - **No rate limiting or CAPTCHA:** Public booking/lookup endpoints would benefit from rate limiting in production.
 - **Test coverage:** Add `@WebMvcTest` controller tests for `GlobalExceptionHandler` JSON payloads and end-to-end tests against a real MySQL 8 container (Testcontainers).
+

@@ -1,19 +1,28 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { HotelImageComponent } from '../../components/hotel-image/hotel-image.component';
 import { BookingResponse } from '../../models/booking.models';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-booking-confirmation',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe],
+  imports: [RouterLink, CurrencyPipe, HotelImageComponent],
   template: `
     @if (loading()) {
       <div class="card empty-state">Loading booking confirmation...</div>
     } @else {
       @if (booking(); as b) {
         <section class="card confirmation-card">
+          <div class="confirmation-photo">
+            <app-hotel-image
+              [src]="b.hotelImageUrl"
+              [alt]="b.hotelName + ' in ' + b.hotelLocation"
+              [fallbackLabel]="b.hotelName"
+              aspectRatio="16 / 7"
+            />
+          </div>
           <span class="badge" [class]="b.status === 'CONFIRMED' ? 'badge-success' : 'badge-danger'">
             {{ b.status }}
           </span>
@@ -79,6 +88,13 @@ import { ApiService } from '../../services/api.service';
 
     .confirmation-card h1 {
       margin: 0.6rem 0 0.25rem;
+    }
+
+    .confirmation-photo {
+      margin: -1.25rem -1.25rem 1rem;
+      overflow: hidden;
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
     }
 
     .ref-box {
