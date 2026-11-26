@@ -1,15 +1,15 @@
-import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { BookingResponse } from '../../models/booking.models';
+import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-manage-booking',
   standalone: true,
-  imports: [ReactiveFormsModule, CurrencyPipe],
+  imports: [ReactiveFormsModule, InrCurrencyPipe],
   template: `
     <section class="manage-wrapper">
       <h1>Manage Booking</h1>
@@ -66,7 +66,7 @@ import { ToastService } from '../../services/toast.service';
 
             <div class="total-box">
               <span class="muted">Total</span>
-              <strong>{{ b.totalAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
+              <strong>{{ b.totalAmount | inr }}</strong>
             </div>
           </div>
 
@@ -87,13 +87,39 @@ import { ToastService } from '../../services/toast.service';
                 type="button"
                 class="btn btn-danger"
                 [disabled]="cancelling()"
-                (click)="onCancel(b)"
+                (click)="openCancelModal()"
               >
                 {{ cancelling() ? 'Cancelling...' : 'Cancel Booking' }}
               </button>
             </div>
           }
         </article>
+      }
+
+      @if (showCancelModal() && booking(); as b) {
+        <div class="modal-backdrop" (click)="closeCancelModal()">
+          <div
+            class="card modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-modal-title"
+            (click)="$event.stopPropagation()"
+          >
+            <h2 id="cancel-modal-title">Cancel booking {{ b.reference }}?</h2>
+            <p class="muted">
+              This will cancel your stay at <strong>{{ b.hotelName }}</strong> ({{ b.checkIn }} to {{ b.checkOut }})
+              and release the room back to inventory.
+            </p>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" (click)="closeCancelModal()" [disabled]="cancelling()">
+                Keep Booking
+              </button>
+              <button type="button" class="btn btn-danger" (click)="confirmCancel(b)" [disabled]="cancelling()">
+                {{ cancelling() ? 'Cancelling...' : 'Confirm Cancel' }}
+              </button>
+            </div>
+          </div>
+        </div>
       }
     </section>
   `,
@@ -172,11 +198,42 @@ import { ToastService } from '../../services/toast.service';
     }
 
     .success-banner {
-      margin-bottom: 1rem;
+      margin-bottom: 16px;
       background: var(--success-soft);
       border-color: #bbf7d0;
       color: var(--success);
       font-weight: 600;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 25, 23, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1100;
+    }
+
+    .modal-dialog {
+      max-width: 440px;
+      width: 100%;
+    }
+
+    .modal-dialog h2 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+    }
+
+    .modal-dialog p {
+      margin: 0 0 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
     }
 
     @media (max-width: 700px) {
@@ -196,6 +253,7 @@ export class ManageBookingComponent implements OnInit {
   readonly booking = signal<BookingResponse | null>(null);
   readonly loading = signal(false);
   readonly cancelling = signal(false);
+  readonly showCancelModal = signal(false);
   readonly cancelSuccessMessage = signal<string | null>(null);
 
   readonly lookupForm = this.fb.nonNullable.group({
@@ -233,19 +291,28 @@ export class ManageBookingComponent implements OnInit {
     });
   }
 
-  onCancel(current: BookingResponse): void {
-    const confirmed = window.confirm(
-      `Are you sure you want to cancel booking ${current.reference} at ${current.hotelName}?`
-    );
-    if (!confirmed) {
-      return;
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.showCancelModal() && !this.cancelling()) {
+      this.closeCancelModal();
     }
+  }
 
+  openCancelModal(): void {
+    this.showCancelModal.set(true);
+  }
+
+  closeCancelModal(): void {
+    this.showCancelModal.set(false);
+  }
+
+  confirmCancel(current: BookingResponse): void {
     this.cancelling.set(true);
     this.api.cancelBooking(current.reference, current.guestEmail).subscribe({
       next: (updated) => {
         this.booking.set(updated);
         this.cancelling.set(false);
+        this.showCancelModal.set(false);
         this.cancelSuccessMessage.set(
           `Booking ${updated.reference} has been cancelled and room availability has been released.`
         );

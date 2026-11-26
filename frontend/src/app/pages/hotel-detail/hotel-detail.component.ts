@@ -1,15 +1,15 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HotelImageComponent } from '../../components/hotel-image/hotel-image.component';
 import { AlternativeDateWindow, HotelDetail, QuoteResponse } from '../../models/booking.models';
+import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-hotel-detail',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, HotelImageComponent],
+  imports: [ReactiveFormsModule, RouterLink, InrCurrencyPipe, HotelImageComponent],
   template: `
     <div class="back-link">
       <a routerLink="/">&larr; Back to hotels</a>
@@ -32,7 +32,7 @@ import { ApiService } from '../../services/api.service';
             <span class="badge badge-muted">{{ h.location }}</span>
             <h1>{{ h.name }}</h1>
             <p class="price-line">
-              <strong>{{ h.pricePerNight | currency:'INR':'symbol':'1.0-0' }}</strong>
+              <strong>{{ h.pricePerNight | inr }}</strong>
               <span class="muted">per night &middot; {{ h.totalRooms }} rooms total</span>
             </p>
             @if (h.availableRooms !== null) {
@@ -113,8 +113,8 @@ import { ApiService } from '../../services/api.service';
                 @if (quote(); as q) {
                   <div class="quote-box">
                     <div class="quote-row">
-                      <span>{{ q.nights }} {{ q.nights === 1 ? 'night' : 'nights' }} &times; {{ q.pricePerNight | currency:'INR':'symbol':'1.0-0' }}</span>
-                      <strong>{{ q.totalAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
+                      <span>{{ q.nights }} {{ q.nights === 1 ? 'night' : 'nights' }} &times; {{ q.pricePerNight | inr }}</span>
+                      <strong>{{ q.totalAmount | inr }}</strong>
                     </div>
                     <div class="quote-status">
                       @if (q.available) {

@@ -1,14 +1,14 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HotelImageComponent } from '../../components/hotel-image/hotel-image.component';
 import { BookingResponse } from '../../models/booking.models';
+import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-booking-confirmation',
   standalone: true,
-  imports: [RouterLink, CurrencyPipe, HotelImageComponent],
+  imports: [RouterLink, InrCurrencyPipe, HotelImageComponent],
   template: `
     @if (loading()) {
       <div class="card empty-state">Loading booking confirmation...</div>
@@ -57,7 +57,7 @@ import { ApiService } from '../../services/api.service';
             </div>
             <div>
               <dt>Total Amount</dt>
-              <dd><strong>{{ b.totalAmount | currency:'INR':'symbol':'1.0-0' }}</strong></dd>
+              <dd><strong>{{ b.totalAmount | inr }}</strong></dd>
             </div>
           </dl>
 

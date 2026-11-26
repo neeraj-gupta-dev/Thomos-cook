@@ -1,9 +1,9 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HotelImageComponent } from '../../components/hotel-image/hotel-image.component';
 import { AlternativeDateWindow, HotelSummary } from '../../models/booking.models';
+import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { ApiService } from '../../services/api.service';
 
 function dateRangeValidator(today: string): ValidatorFn {
@@ -30,11 +30,10 @@ function dateRangeValidator(today: string): ValidatorFn {
 @Component({
   selector: 'app-hotel-list',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, HotelImageComponent],
+  imports: [ReactiveFormsModule, RouterLink, InrCurrencyPipe, HotelImageComponent],
   template: `
     <section class="hero">
-      <h1>Find your next stay</h1>
-      <p class="muted">Browse boutique stays and heritage hotels across India with instant availability.</p>
+      <h1>Available hotels</h1>
 
       <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="card search-bar">
         <div class="form-group">
@@ -87,7 +86,19 @@ function dateRangeValidator(today: string): ValidatorFn {
 
     <section class="results">
       @if (loading()) {
-        <div class="card empty-state">Loading hotels...</div>
+        <div class="hotel-grid" aria-label="Loading hotels">
+          @for (item of [1, 2, 3]; track item) {
+            <div class="card skeleton-card">
+              <div class="skeleton-photo"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line title"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+              </div>
+            </div>
+          }
+        </div>
       } @else if (hotels().length === 0) {
         <div class="card empty-state">
           No hotels found. Try another city or clear the filters.
@@ -108,7 +119,7 @@ function dateRangeValidator(today: string): ValidatorFn {
                   <h2>{{ hotel.name }}</h2>
                 </div>
                 <div class="price-tag">
-                  <strong>{{ hotel.pricePerNight | currency:'INR':'symbol':'1.0-0' }}</strong>
+                  <strong>{{ hotel.pricePerNight | inr }}</strong>
                   <span class="muted">/ night</span>
                 </div>
               </div>
@@ -116,7 +127,7 @@ function dateRangeValidator(today: string): ValidatorFn {
               <p class="hotel-desc">{{ hotel.description }}</p>
 
               <div class="amenities">
-                @for (amenity of hotel.amenities; track amenity) {
+                @for (amenity of hotel.amenities.slice(0, 4); track amenity) {
                   <span class="amenity-chip">{{ amenity }}</span>
                 }
               </div>
@@ -150,7 +161,7 @@ function dateRangeValidator(today: string): ValidatorFn {
                     }
                     @if (hotel.totalPrice !== null && hotel.nights !== null) {
                       <span class="total-preview">
-                        Total: <strong>{{ hotel.totalPrice | currency:'INR':'symbol':'1.0-0' }}</strong>
+                        Total: <strong>{{ hotel.totalPrice | inr }}</strong>
                         ({{ hotel.nights }} {{ hotel.nights === 1 ? 'night' : 'nights' }})
                       </span>
                     }
@@ -320,6 +331,38 @@ function dateRangeValidator(today: string): ValidatorFn {
     .alt-chip:hover {
       background: var(--primary);
       color: #ffffff;
+    }
+
+    .skeleton-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .skeleton-photo {
+      aspect-ratio: 16 / 10;
+      background: var(--surface-muted);
+    }
+
+    .skeleton-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      background: var(--surface-muted);
+      border-radius: var(--radius-sm);
+    }
+
+    .skeleton-line.short {
+      width: 35%;
+    }
+
+    .skeleton-line.title {
+      width: 70%;
+      height: 20px;
     }
 
     @media (max-width: 780px) {
