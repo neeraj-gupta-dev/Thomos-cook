@@ -1,13 +1,13 @@
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, OnChanges, signal } from '@angular/core';
 
 @Component({
   selector: 'app-hotel-image',
   standalone: true,
   template: `
     <div class="hotel-photo-frame" [style.aspect-ratio]="aspectRatio">
-      @if (src && !failed()) {
+      @if (resolvedSrc() && !failed()) {
         <img
-          [src]="src"
+          [src]="resolvedSrc()"
           [alt]="alt"
           loading="lazy"
           (error)="onError()"
@@ -49,16 +49,31 @@ import { Component, Input, signal } from '@angular/core';
     }
   `]
 })
-export class HotelImageComponent {
+export class HotelImageComponent implements OnChanges {
   @Input() src: string | null = null;
+  @Input() hotelId?: number;
   @Input() alt = 'Hotel exterior view';
   @Input() fallbackLabel = 'Photo unavailable';
   @Input() aspectRatio = '16 / 10';
 
   readonly failed = signal(false);
 
+  ngOnChanges(): void {
+    this.failed.set(false);
+  }
+
+  resolvedSrc(): string | null {
+    if (this.src && this.src.trim().length > 0) {
+      return this.src;
+    }
+    if (this.hotelId && this.hotelId > 0) {
+      const index = ((this.hotelId - 1) % 6) + 1;
+      return `/assets/hotels/hotel-${index}.jpg`;
+    }
+    return null;
+  }
+
   onError(): void {
     this.failed.set(true);
   }
 }
-

@@ -18,6 +18,7 @@ import { ApiService } from '../../services/api.service';
           <div class="confirmation-photo">
             <app-hotel-image
               [src]="b.hotelImageUrl"
+              [hotelId]="b.hotelId"
               [alt]="b.hotelName + ' in ' + b.hotelLocation"
               [fallbackLabel]="b.hotelName"
               aspectRatio="16 / 7"

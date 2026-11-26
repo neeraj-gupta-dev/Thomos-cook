@@ -26,6 +26,7 @@ import { MAX_STAY_NIGHTS, calculateNights, getLocalTodayIso } from '../../utils/
             <div class="detail-photo">
               <app-hotel-image
                 [src]="h.imageUrl"
+                [hotelId]="h.id"
                 [alt]="h.name + ' in ' + h.location"
                 [fallbackLabel]="h.name"
                 aspectRatio="16 / 9"

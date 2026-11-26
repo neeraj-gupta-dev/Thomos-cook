@@ -139,6 +139,7 @@ function dateRangeValidator(today: string): ValidatorFn {
             <article class="card hotel-card">
               <app-hotel-image
                 [src]="hotel.imageUrl"
+                [hotelId]="hotel.id"
                 [alt]="hotel.name + ' in ' + hotel.location"
                 [fallbackLabel]="hotel.name"
               />
