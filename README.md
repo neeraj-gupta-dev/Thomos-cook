@@ -109,9 +109,6 @@ npx ng build
 
 Hotel preview photos are stored locally under `frontend/src/assets/hotels/hotel-1.jpg` through `hotel-6.jpg` for offline/local development use.
 
-## Time Spent
-
-`<I will fill in the real hours>`
 
 ## Unfinished Items / Known Gaps
 
