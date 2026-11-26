@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { BookingResponse } from '../../models/booking.models';
 import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { ApiService } from '../../services/api.service';
+import { GuestPreferencesService, SavedBookingRef } from '../../services/guest-preferences.service';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
@@ -51,6 +52,42 @@ import { ToastService } from '../../services/toast.service';
 
       @if (cancelSuccessMessage(); as successMsg) {
         <div class="card success-banner" role="status">{{ successMsg }}</div>
+      }
+
+      @if (guestPrefs.profile().bookings.length > 0 || guestPrefs.profile().guestEmail) {
+        <section class="card my-bookings-card">
+          <div class="my-bookings-header">
+            <div>
+              <h2>My bookings on this device</h2>
+              <p class="muted device-note">
+                Saved in your browser&apos;s localStorage on this device only (no account required).
+              </p>
+            </div>
+            <button type="button" class="btn btn-secondary" (click)="onForgetDetails()">
+              Forget my details
+            </button>
+          </div>
+
+          @if (guestPrefs.profile().bookings.length > 0) {
+            <ul class="saved-list">
+              @for (item of guestPrefs.profile().bookings; track item.reference) {
+                <li class="saved-item">
+                  <div>
+                    <strong>{{ item.reference }}</strong> &mdash; {{ item.hotelName }}
+                    <div class="muted saved-dates">{{ item.checkIn }} to {{ item.checkOut }}</div>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="loadSavedBooking(item)"
+                  >
+                    View
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
       }
 
       @if (booking(); as b) {
@@ -236,6 +273,52 @@ import { ToastService } from '../../services/toast.service';
       gap: 8px;
     }
 
+    .my-bookings-card {
+      margin-bottom: 16px;
+    }
+
+    .my-bookings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .my-bookings-header h2 {
+      margin: 0 0 4px;
+      font-size: 1.1rem;
+    }
+
+    .device-note {
+      margin: 0;
+      font-size: 0.85rem;
+    }
+
+    .saved-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .saved-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+    }
+
+    .saved-dates {
+      font-size: 0.82rem;
+    }
+
     @media (max-width: 700px) {
       .lookup-form,
       .details-grid {
@@ -249,6 +332,7 @@ export class ManageBookingComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  readonly guestPrefs = inject(GuestPreferencesService);
 
   readonly booking = signal<BookingResponse | null>(null);
   readonly loading = signal(false);
@@ -267,7 +351,30 @@ export class ManageBookingComponent implements OnInit {
     if (reference && email) {
       this.lookupForm.setValue({ reference, email });
       this.onLookup();
+      return;
     }
+
+    const saved = this.guestPrefs.profile();
+    if (saved.guestEmail) {
+      this.lookupForm.patchValue({
+        email: saved.guestEmail,
+        reference: saved.bookings[0]?.reference ?? ''
+      });
+    }
+  }
+
+  loadSavedBooking(item: SavedBookingRef): void {
+    this.lookupForm.setValue({
+      reference: item.reference,
+      email: item.email
+    });
+    this.onLookup();
+  }
+
+  onForgetDetails(): void {
+    this.guestPrefs.forgetAll();
+    this.lookupForm.reset({ reference: '', email: '' });
+    this.toast.showSuccess('Saved details cleared from this device.');
   }
 
   onLookup(): void {

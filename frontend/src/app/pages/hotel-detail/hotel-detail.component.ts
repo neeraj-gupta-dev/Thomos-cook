@@ -5,6 +5,7 @@ import { HotelImageComponent } from '../../components/hotel-image/hotel-image.co
 import { AlternativeDateWindow, HotelDetail, QuoteResponse } from '../../models/booking.models';
 import { InrCurrencyPipe } from '../../pipes/inr-currency.pipe';
 import { ApiService } from '../../services/api.service';
+import { GuestPreferencesService } from '../../services/guest-preferences.service';
 
 @Component({
   selector: 'app-hotel-detail',
@@ -342,6 +343,7 @@ export class HotelDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
+  private readonly guestPrefs = inject(GuestPreferencesService);
 
   readonly today = new Date().toISOString().split('T')[0];
   readonly hotel = signal<HotelDetail | null>(null);
@@ -364,10 +366,13 @@ export class HotelDetailComponent implements OnInit {
     this.hotelId = Number(this.route.snapshot.paramMap.get('id'));
     const checkIn = this.route.snapshot.queryParamMap.get('checkIn') ?? '';
     const checkOut = this.route.snapshot.queryParamMap.get('checkOut') ?? '';
+    const saved = this.guestPrefs.profile();
 
-    if (checkIn && checkOut) {
-      this.bookingForm.patchValue({ checkIn, checkOut });
-    }
+    this.bookingForm.patchValue({
+      ...(checkIn && checkOut ? { checkIn, checkOut } : {}),
+      ...(saved.guestName ? { guestName: saved.guestName } : {}),
+      ...(saved.guestEmail ? { guestEmail: saved.guestEmail } : {})
+    });
 
     this.loadHotel(checkIn || undefined, checkOut || undefined);
     if (checkIn && checkOut) {
@@ -416,6 +421,13 @@ export class HotelDetailComponent implements OnInit {
       checkOut
     }).subscribe({
       next: (booking) => {
+        this.guestPrefs.saveBooking(booking.guestName, booking.guestEmail, {
+          reference: booking.reference,
+          hotelName: booking.hotelName,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          email: booking.guestEmail
+        });
         this.submitting.set(false);
         this.router.navigate(['/booking/confirmation', booking.reference], {
           queryParams: { email: booking.guestEmail },
